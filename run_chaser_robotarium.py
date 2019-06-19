@@ -49,14 +49,15 @@ class ChaserAgents:
 
         self.r = robotarium.Robotarium(number_of_agents= num_agents, show_figure= show_figure, save_data= False, update_time = 1) #, update_time= time_step)
 
+        self.uni_barrier_cert = create_unicycle_barrier_certificate(num_agents, barrier_gain = 100, safety_radius= 0.1650, projection_distance = 0.05)
+
         self.go_to_point_and_pose(self.poses_robotarium)
 
-        self.uni_barrier_cert = create_unicycle_barrier_certificate(num_agents, barrier_gain = 100, safety_radius= 0.1650, projection_distance = 0.05)
 
 
     def go_to_point_and_pose(self, goal_points):
 
-        si_barrier_cert = create_single_integrator_barrier_certificate(self.num_agents)
+        # si_barrier_cert = create_single_integrator_barrier_certificate(self.num_agents)
         uni_barrier_cert = create_unicycle_barrier_certificate(self.num_agents, safety_radius=0.05)
 
         # define x initially
@@ -65,24 +66,24 @@ class ChaserAgents:
 
         # While the number of robots at the required poses is less
         # than N...
-        while (np.size(at_pose(x, goal_points, rotation_error=100)) != self.num_agents):
+        # while (np.size(at_pose(x, goal_points, rotation_error=100)) != self.num_agents):
+        #
+        #     # Get poses of agents
+        #     x = self.r.get_poses()
+        #     x_si = x[:2, :]
+        #
+        #     # Create single-integrator control inputs
+        #     dxi = single_integrator_position_controller(x_si, goal_points[:2, :], magnitude_limit=0.08)
+        #
+        #     # Create safe control inputs (i.e., no collisions)
+        #     dxi = si_barrier_cert(dxi, x_si)
+        #
+        #     # Set the velocities by mapping the single-integrator inputs to unciycle inputs
+        #     self.r.set_velocities(np.arange(self.num_agents), single_integrator_to_unicycle2(dxi, x))
+        #     # Iterate the simulation
+        #     self.r.step()
 
-            # Get poses of agents
-            x = self.r.get_poses()
-            x_si = x[:2, :]
-
-            # Create single-integrator control inputs
-            dxi = single_integrator_position_controller(x_si, goal_points[:2, :], magnitude_limit=0.08)
-
-            # Create safe control inputs (i.e., no collisions)
-            dxi = si_barrier_cert(dxi, x_si)
-
-            # Set the velocities by mapping the single-integrator inputs to unciycle inputs
-            self.r.set_velocities(np.arange(self.num_agents), single_integrator_to_unicycle2(dxi, x))
-            # Iterate the simulation
-            self.r.step()
-
-        while(np.size(at_pose(x, goal_points,rotation_error=0.2)) != self.num_agents):
+        while(np.size(at_pose(x, goal_points)) != self.num_agents):
 
             # Get poses of agents
             x = self.r.get_poses()
@@ -92,6 +93,7 @@ class ChaserAgents:
 
             # Create safe input s
             dxu = uni_barrier_cert(dxu, x)
+
 
             self.r.set_velocities(np.arange(self.num_agents), dxu)
             self.r.step()
@@ -113,12 +115,12 @@ class ChaserAgents:
             acc = (agent_j - agent_i) * 2.0 / self.time_step**2
 
             if np.linalg.norm(acc) > self.max_acc:
-                acc *=  self.max_acc / np.linalg.norm(2*acc)
+                acc *=  self.max_acc / np.linalg.norm(acc)
 
             vel = acc * self.time_step
 
             if np.linalg.norm(vel) > self.max_vel:
-                vel *=  self.max_vel / np.linalg.norm(2*vel)
+                vel *=  self.max_vel / np.linalg.norm(vel)
 
             self._next_positions[:,i] = self.poses_robotarium[:2,i] + self.time_step * vel
 
@@ -127,7 +129,7 @@ class ChaserAgents:
 
             self.velocities[0,i] = np.linalg.norm(vel)
 
-            self.go_to_pose_and_control()
+        self.go_to_pose_and_control()
 
 
     def go_to_pose_and_control(self):
@@ -219,7 +221,7 @@ def main():
 
     agents.r.call_at_scripts_end()
 
-    time.sleep(3)
+    #time.sleep(3)
 
 
 if __name__ == '__main__':
@@ -228,11 +230,11 @@ if __name__ == '__main__':
     parser.add_argument('--num-agents', type = int, default = 10, help = 'number of agents')
     parser.add_argument('--max-vel', type = float, default = 0.2, help = 'max velocity')
     parser.add_argument('--max-ang-vel', type = float, default = np.pi, help = 'max angular velocity')
-    parser.add_argument('--time-step', type = float, default = 0.1352, help = 'time step')
-    parser.add_argument('--max-acc', type = float, default = 0.3, help = 'max acceleration')
+    parser.add_argument('--time-step', type = float, default = 0.1320, help = 'time step')
+    parser.add_argument('--max-acc', type = float, default = 3, help = 'max acceleration')
     parser.add_argument('--radius', type = float, default = 0.75, help = 'initial radius of the formation')
     parser.add_argument('--num-time-steps', type = int, default = 60, help = 'time step')
-    parser.add_argument('--show-figure', action='store_true', default = False, help = 'show robotarium figure' )
+    parser.add_argument('--show-figure', action='store_true', default = True, help = 'show robotarium figure' )
     #parser.add_argument('--save-data')
     ARGS = parser.parse_args()
 
